@@ -11,6 +11,7 @@ const {
 
 const app = express();
 
+// sample data
 const users = [
     { id: 1, name: "Alexander", age: 22 },
     { id: 2, name: "Hendrik", age: 20 },
@@ -25,9 +26,11 @@ const checkouts = [
     { id: 5, name: "second checkout Stephaan", score: 40, userId: 3 }
 ];
 
+// type for checkout
 const CheckoutType = new GraphQLObjectType({
     name: "Checkout",
     description: "Represents a checkout",
+    // declaring as functions is needed for accessibility
     fields: () => ({
         id: { type: GraphQLNonNull(GraphQLInt) },
         name: { type: GraphQLNonNull(GraphQLString) },
@@ -43,6 +46,7 @@ const CheckoutType = new GraphQLObjectType({
     })
 });
 
+// type for user
 const UserType = new GraphQLObjectType({
     name: "User",
     description: "Represents a user",
@@ -78,6 +82,7 @@ const RootQueryType = new GraphQLObjectType({
             args: {
                 id: { type: GraphQLInt }
             },
+            // pass parent and args to get id from args
             resolve: (parent, args) => checkouts.find(c => c.id === args.id)
         },
         // get all users in list
@@ -85,12 +90,66 @@ const RootQueryType = new GraphQLObjectType({
             type: new GraphQLList(UserType),
             description: "List of all users",
             resolve: () => users
+        },
+        // get a single user by id argument
+        user: {
+            type: UserType,
+            description: "A single user",
+            resolve: (parent, args) => users.find(u => u.id === args.id)
         }
     })
 });
 
+// root mutation
+const RootMutationType = new GraphQLObjectType({
+    name: "Mutation",
+    description: "Root mutation",
+    fields: () => ({
+        // add a checkout via mutation
+        addCheckout: {
+            type: CheckoutType,
+            description: "Add a checkout",
+            // arguments needed for mutation
+            args: {
+                name: { type: GraphQLNonNull(GraphQLString) },
+                score: { type: GraphQLNonNull(GraphQLInt) },
+                userId: { type: GraphQLNonNull(GraphQLInt) },
+            },
+            resolve: (parent, args) => {
+                const checkout = {
+                    id: checkouts.length + 1,
+                    name: args.name,
+                    score: args.score,
+                    userId: args.userId
+                }
+                checkouts.push(checkout); // add checkout to checkouts
+                return checkout;
+            }
+        },
+        addUser: {
+            type: UserType,
+            description: "Add a user",
+            args: {
+                name: { type: GraphQLNonNull(GraphQLString) },
+                age: { type: GraphQLNonNull(GraphQLInt) },
+            },
+            resolve: (parent, args) => {
+                const user = {
+                    id: users.length + 1,
+                    name: args.name,
+                    age: args.age
+                }
+                checkouts.push(user);
+                return user;
+            }
+        }
+    })
+});
+
+// schema
 const schema = new GraphQLSchema({
-    query: RootQueryType
+    query: RootQueryType, // query
+    mutation: RootMutationType // mutation
 })
 
 app.use('/graphql', graphqlHTTP({
