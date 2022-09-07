@@ -1,4 +1,4 @@
-# Graphing
+# GQL
 
 ***Using GraphQL with Node.js and Express***
 
